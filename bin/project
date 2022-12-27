@@ -1,0 +1,45 @@
+#!/bin/sh
+
+environment="${PYTHON_ENV:=development}"
+project=basecode
+
+if [ $1 ]
+then
+    project=$1
+fi
+
+convention ()
+{
+    curl -sL https://raw.githubusercontent.com/tripteki/convention/1.0.0/bin/apply | sh
+}
+
+clean ()
+{
+    find . -type f -name "*.bak" -delete
+
+    find . -type f -name "README.md" -delete
+    find bin -type f -name "project" -delete;
+}
+
+build ()
+{
+    if [ $environment = "development" ]
+    then
+        /usr/bin/env python3 -m pip install -r requirements.txt --user
+    else
+        /usr/bin/env python3 -m pip install -r requirements.txt
+    fi
+}
+
+mkdir -p $project && wget -qO- https://github.com/tripteki/python-cli/archive/refs/heads/main.tar.gz | tar -xzv -C $project --strip-component 1
+cd $project
+fgrep -r -l "Basecode" | xargs -I {} sed -i'.bak' -e "s/Basecode/"$(echo $project | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"/g" {} 2> /dev/null
+fgrep -r -l "BASECODE" | xargs -I {} sed -i'.bak' -e "s/BASECODE/"$(echo $project | awk '{print toupper($0)}')"/g" {} 2> /dev/null
+fgrep -r -l "basecode" | xargs -I {} sed -i'.bak' -e "s/basecode/"$(echo $project | awk '{print tolower($0)}')"/g" {} 2> /dev/null
+mv basecode $project
+cp .env.example .env
+
+convention
+clean
+
+build
